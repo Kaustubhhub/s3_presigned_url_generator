@@ -1,101 +1,134 @@
-import Image from "next/image";
+"use client"
+import { useState } from "react";
+import AWS from "aws-sdk";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [accessKeyId, setAccessKeyId] = useState("");
+  const [secretAccessKey, setSecretAccessKey] = useState("");
+  const [region, setRegion] = useState("");
+  const [bucketName, setBucketName] = useState("");
+  const [objectKey, setObjectKey] = useState("");
+  const [presignedUrl, setPresignedUrl] = useState("");
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  const generatePresignedUrl = async () => {
+    try {
+      if (!accessKeyId || !secretAccessKey || !region || !bucketName || !objectKey) {
+        alert("Please fill in all fields!");
+        return;
+      }
+
+      // Configure AWS SDK dynamically with user inputs
+      const s3 = new AWS.S3({
+        accessKeyId,
+        secretAccessKey,
+        region,
+      });
+
+      // Generate Presigned URL
+      const params = {
+        Bucket: bucketName,
+        Key: objectKey,
+        Expires: 60, // URL valid for 60 seconds
+      };
+
+      const url = await s3.getSignedUrlPromise("getObject", params);
+      setPresignedUrl(url);
+    } catch (error) {
+      console.error("Error generating presigned URL:", error);
+      alert("Failed to generate presigned URL. Please check your inputs!");
+    }
+  };
+
+  return (
+    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
+      <h1>S3 Presigned URL Generator</h1>
+      <div style={{ marginBottom: "10px" }}>
+        <label>Access Key ID:</label>
+        <input
+          type="text"
+          value={accessKeyId}
+          onChange={(e) => setAccessKeyId(e.target.value)}
+          placeholder="Enter AWS Access Key ID"
+          style={{ marginLeft: "10px", width: "300px" }}
+        />
+      </div>
+      <div style={{ marginBottom: "10px" }}>
+        <label>Secret Access Key:</label>
+        <input
+          type="text"
+          value={secretAccessKey}
+          onChange={(e) => setSecretAccessKey(e.target.value)}
+          placeholder="Enter AWS Secret Access Key"
+          style={{ marginLeft: "10px", width: "300px" }}
+        />
+      </div>
+      <div style={{ marginBottom: "10px" }}>
+        <label>Region:</label>
+        <input
+          type="text"
+          value={region}
+          onChange={(e) => setRegion(e.target.value)}
+          placeholder="Enter AWS Region (e.g., us-east-1)"
+          style={{ marginLeft: "10px", width: "300px" }}
+        />
+      </div>
+      <div style={{ marginBottom: "10px" }}>
+        <label>Bucket Name:</label>
+        <input
+          type="text"
+          value={bucketName}
+          onChange={(e) => setBucketName(e.target.value)}
+          placeholder="Enter S3 Bucket Name"
+          style={{ marginLeft: "10px", width: "300px" }}
+        />
+      </div>
+      <div style={{ marginBottom: "10px" }}>
+        <label>Object Key:</label>
+        <input
+          type="text"
+          value={objectKey}
+          onChange={(e) => setObjectKey(e.target.value)}
+          placeholder="Enter Object Key (e.g., folder/file.txt)"
+          style={{ marginLeft: "10px", width: "300px" }}
+        />
+      </div>
+      <button
+        onClick={generatePresignedUrl}
+        style={{
+          padding: "10px 20px",
+          backgroundColor: "#0070f3",
+          color: "white",
+          border: "none",
+          cursor: "pointer",
+          borderRadius: "5px",
+        }}
+      >
+        Generate Presigned URL
+      </button>
+      {presignedUrl && (
+        <div style={{ marginTop: "20px" }}>
+          <h3>Generated Presigned URL:</h3>
+          <textarea
+            value={presignedUrl}
+            readOnly
+            style={{ width: "100%", padding: "10px" }}
+          />
+          <button
+            onClick={() => navigator.clipboard.writeText(presignedUrl)}
+            style={{
+              marginTop: "10px",
+              padding: "10px 20px",
+              backgroundColor: "#28a745",
+              color: "white",
+              border: "none",
+              cursor: "pointer",
+              borderRadius: "5px",
+            }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            Copy to Clipboard
+          </button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      )}
     </div>
   );
 }
